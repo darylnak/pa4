@@ -211,20 +211,12 @@ void ActorGraph::getOriginAndDest(string& orig, string& dest, istream& currLine)
 /** find shortest path from actor A to B. Writes a formatted path to a file */
 void ActorGraph::getShortestPath(string& orig, string& dest, ostream& pathsFile)
 {
-    auto sourceCheck = actors.find(orig);
-    auto destCheck = actors.find(dest);
-    int recorded = 0; // number of nodes modified
-    bool hasPath = false;
-
-    // if either actor does not exist, return TODO: check behavior against ref
-    if(sourceCheck == actors.end() || destCheck == actors.end())
-        return;
-
-    // TODO: check case for no actors in the graph
-    Actor* origAct = sourceCheck->second;
-    Actor* destAct = destCheck->second;
+    Actor* origAct = actors.find(orig)->second;
+    Actor* destAct = actors.find(dest)->second;
     Actor* curr = nullptr; // current working actor in graph
+    int recorded = 0; // number of nodes modified
     int distCheck; // current working distance from source
+    bool hasPath = false;
 
     // initial setup before Dijkstras; pushing origin to queue
     origAct->setDist(0);
