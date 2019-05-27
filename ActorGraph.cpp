@@ -1,10 +1,16 @@
-/*
- * ActorGraph.cpp
- * Author: <YOUR NAME HERE>
- * Date:   <DATE HERE>
+/**
+ * Filename:    ActorGraph.cpp
  *
- * This file is meant to exist as a container for starter code that you can use to read the input file format
- * defined in imdb_2019.tsv. Feel free to modify any/all aspects as you wish.
+ * Team:         Brandon Olmos (bolmos@ucsd.edu),
+ *               Daryl Nakamoto (dnakamot@ucsd.edu)
+ *
+ * Reference(s): cplusplus.com
+ *
+ * Description:  Graph which contains Actor nodes to perform graph algs on.
+ *               Can find shortest path from actor A to actor B through
+ *               series of movies connecting actors.
+ *
+ * Arguments: input file, u/w, pairs, output
  */
  
 #include <fstream>
@@ -20,7 +26,10 @@ using namespace std;
 /**
  * Constructor of the Actor graph
  */ 
-ActorGraph::ActorGraph(void) = default;
+ActorGraph::ActorGraph()
+{
+    pq = priority_queue<Actor*, vector<Actor*>, Compare>();
+}
 
 /** Destroy the graph */
 ActorGraph::~ActorGraph() {
@@ -33,15 +42,13 @@ ActorGraph::~ActorGraph() {
         delete movie.second;
 }
 
-/** You can modify this method definition as you wish
- *
- * Load the graph from a tab-delimited file of actor->movie relationships.
+/** Load the graph from a tab-delimited file of actor->movie relationships.
  *
  * in_filename - input filename
- * use_weighted_edges - if true, compute edge weights as 1 + (2019 - movie_year),
+ * use_weighted_edges - if true, compute edge weights as 1 + (2019 - movie_year)
  *                      otherwise all edge weights will be 1
  *
- * return true if file was loaded sucessfully, false otherwise
+ * return true if file was loaded successfully, false otherwise
  */
 bool ActorGraph::loadFromFile(const char* in_filename, bool useWeight) {
 
@@ -84,38 +91,53 @@ bool ActorGraph::loadFromFile(const char* in_filename, bool useWeight) {
             continue;
         }
 
+        // get actor name, their movie and movie year
         string actor_name(record[0]);
         string movie_title(record[1]);
         int movie_year = stoi(record[2]);
 
-        // find the actor, if it exists
+        /** actors are inserted in an ActorCollection, a collection to
+        *   hold all actors in the graph. Check if this actor has been recorded
+        */
         auto actorItr = actors.find(actor_name);
 
-        // check if the actor does not exist
+        /** if the actor did not exist, add them to the ActorCollection/graph
+         *  Hold a pointer to the actor to work on it later
+         */
         if(actorItr == actors.end())
         {
             newActor = new Actor(actor_name);
             actors.insert(actorVal(actor_name, newActor)); // add actor to graph
         }
 
-        // hold the actor, if it exists
+        // else, the actor existed, so just remember it
         else
             newActor = actorItr->second;
 
-        // check to see if movie exists in the movie archive
+        /** movies are inserted in an Archive, a collection to
+        *   hold all movie connectin actors.
+        *   Check if this movie has been recorded
+        */
         movieKey = movie_title + to_string(movie_year);
-
         auto movieItr = movieArchive.find(movieKey);
 
-        // create a new movie in the archive if it does not exist
+        /** create a new movie in the archive if it does not exist
+         *  hold pointer to the movie to work on it later
+         */
         if(movieItr == movieArchive.end())
         {
             newMovie = new Movie(movie_title, movie_year, useWeight);
             movieArchive.insert(movieVal(movieKey, newMovie));
         }
 
+        // else, the movie existed, so just remember it
         else
             newMovie = movieItr->second;
+
+        /** check to see if actor needs to add a new movie to their collection
+         *  and also check to see if actor must be added to the cast of the
+         *  movie
+         */
 
         updateGraph(newActor, newMovie);
     }
@@ -132,12 +154,14 @@ bool ActorGraph::loadFromFile(const char* in_filename, bool useWeight) {
 /** Update the actor and movie archive as necessary */
 void ActorGraph::updateGraph(Actor* actor, Movie* movie)
 {
-    /** check if actor must be updated */
+    /** check if actor and/or movie must be updated */
     actor->updateCollection(movie);
     movie->updateCast(actor);
 }
 
-/** write shortest path for each pair of actors in file */
+/** write shortest path for each pair of actors
+*  in pairs file -- initial call.
+**/
 void ActorGraph::writeShortestPaths(istream& allPairs, ostream& pathsFile)
 {
     string currLine;
@@ -145,8 +169,8 @@ void ActorGraph::writeShortestPaths(istream& allPairs, ostream& pathsFile)
     string originActor;
     string destinationActor;
 
-    getline(allPairs, trash); // go past header
-    getline(allPairs, currLine);
+    getline(allPairs, trash);    // go past header
+    getline(allPairs, currLine); // wil be EOF if no pairs in file
 
     // check for no pairs input
     if(allPairs.eof()) return;
@@ -172,70 +196,80 @@ void ActorGraph::writeShortestPaths(istream& allPairs, ostream& pathsFile)
     }
 }
 
+/** parse line from pairs file. Get origin actor and destination actor */
 void ActorGraph::getOriginAndDest(string& orig, string& dest, istream& currLine)
 {
-    const char DELIM = '\t';
+    const char DELIM = '\t'; // delimiter
 
-    getline(currLine, orig, DELIM);
-    getline(currLine, dest, '\n');
+    getline(currLine, orig, DELIM); // get actor before tab
+    getline(currLine, dest, '\n');  // get actor after tab
 
+    // to stop the loop if currLine is the last line in file
     if(currLine.peek() == EOF) currLine.get();
 }
-void ActorGraph::getShortestPath(string& origin, string& destination, ostream& pathsFile)
+
+/** find shortest path from actor A to B. Writes a formatted path to a file */
+void ActorGraph::getShortestPath(string& orig, string& dest, ostream& pathsFile)
 {
-    pq = priority_queue<Actor*, vector<Actor*>, Compare>();
-    processed = unordered_map<int, Actor*>();
-    auto sourceCheck = actors.find(origin);
-    auto destCheck = actors.find(destination);
+    auto sourceCheck = actors.find(orig);
+    auto destCheck = actors.find(dest);
     int recorded = 0; // number of nodes modified
     bool hasPath = false;
 
-    // if either actor does not exist, return
+    // if either actor does not exist, return TODO: check behavior against ref
     if(sourceCheck == actors.end() || destCheck == actors.end())
         return;
 
-    Actor* source = sourceCheck->second;
-    Actor* dest = destCheck->second;
-    Actor* curr = nullptr;
+    // TODO: check case for no actors in the graph
+    Actor* origAct = sourceCheck->second;
+    Actor* destAct = destCheck->second;
+    Actor* curr = nullptr; // current working actor in graph
     int distCheck; // current working distance from source
 
-    source->setDist(0);
-    pq.push(source);
+    // initial setup before Dijkstras; pushing origin to queue
+    origAct->setDist(0);
+    pq.push(origAct);
 
-    /** run dijkstras algorithm to find shortest path */
+    /** run Dijkstras to find shortest path from origin actor to dest actor */
     while(!pq.empty())
     {
+        // get min distance actor (node) from origin
         curr = pq.top();
         pq.pop();
 
-        // stop when dest has shortest path to orig
-        if(curr == dest)
+        // stop when dest has shortest path to orig (popped node is done node)
+        if(curr == destAct)
         {
-            hasPath = true;
+            hasPath = true; // set to know if path found by loop termination
             break;
         }
 
+        // check if current actor has been completely processed
         if(!curr->wasProcessed)
         {
+            // mark as processed so it is not visited later on
             curr->wasProcessed = true;
 
-            // go through each edge for actor (movie in collection)
+            // travel through each edge for actor (movie in collection)
             for(movieVal movieItr : curr->movies)
             {
                 // for each destination from edge (cast in movie)
                 for(actorVal actorItr : movieItr.second->cast)
                 {
+                    // check if current actor has been completely processed
                     if(actorItr.second->wasProcessed) continue;
 
-                    // add weight of edge to current nodes dist from source
+                    // get this paths distance from origin to current actor
                     distCheck = curr->getDist() + movieItr.second->getStrength();
 
-                    // if infinite dist or better dist found, set to distCheck
+                    // if infinite dist or better dist found, update
                     if(actorItr.second->getDist() < 0 ||
                             distCheck < actorItr.second->getDist())
                     {
+                        // remember actor that got us here
                         actorItr.second->setPrev(curr);
                         actorItr.second->setDist(distCheck);
+                        // dest actor remembers movie connecting them
                         actorItr.second->setEdge(movieItr.second);
 
                         pq.push(actorItr.second);
@@ -248,7 +282,9 @@ void ActorGraph::getShortestPath(string& origin, string& destination, ostream& p
         }
     }
 
-    // hasPath is a check to see if there was a path from orig to dest
+    /** hasPath is a check to see if there was a path from orig to dest
+     *
+     */
     while(hasPath && curr != nullptr)
     {
         path.push(curr);
@@ -264,6 +300,9 @@ void ActorGraph::getShortestPath(string& origin, string& destination, ostream& p
         record.second->setDist(-1);
         record.second->setPrev(nullptr);
     }
+
+    // reset priority queue for a new call to find shortest path
+    pq = priority_queue<Actor*, vector<Actor*>, Compare>();
 }
 
 /** write shortest path from origin to destination to output file */

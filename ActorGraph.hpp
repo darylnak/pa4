@@ -1,10 +1,15 @@
-/*
- * ActorGraph.hpp
- * Author: <YOUR NAME HERE>
- * Date:   <DATE HERE>
+/**
+ * Filename:    ActorGraph.hpp
  *
- * This file is meant to exist as a container for starter code that you can use to read the input file format
- * defined imdb_2019.tsv. Feel free to modify any/all aspects as you wish.
+ * Team:         Brandon Olmos (bolmos@ucsd.edu),
+ *               Daryl Nakamoto (dnakamot@ucsd.edu)
+ *
+ * Reference(s): cplusplus.com
+ *
+ * Description:  Graph which contains Actor nodes to perform graph algs on.
+ *               Can find shortest path from actor A to actor B through
+ *               series of movies connecting actors.
+ *
  */
 
 #ifndef ACTORGRAPH_HPP
@@ -16,16 +21,9 @@
 #include <queue>
 #include "Actor.hpp"
 
-// Maybe include some data structures here
-
-
 using namespace std;
 
-typedef unordered_map<string, Movie*> MovieArchive;
-typedef unordered_map<string, Actor*> ActorCollection;
-typedef pair<string, Actor*> actor; // <actor_name, Actor*>
-typedef pair<int, Actor*> rec; // pair for record keeping
-
+/** use with priority queue for dijkstra. key is dist from orig to curr actor */
 class Compare {
 public:
     bool operator() (Actor* act1, Actor* act2)
@@ -37,19 +35,25 @@ public:
     }
 };
 
+typedef unordered_map<string, Movie*> movie_archive;
+typedef unordered_map<string, Actor*> actor_collection;
+typedef pair<string, Actor*> actor; // <actor_name, Actor*>
+typedef pair<int, Actor*> rec; // pair for record keeping
+typedef unordered_map<int, Actor*> hash_table;
+typedef priority_queue<Actor*, vector<Actor*>, Compare> actor_pq;
 
 /**
- * TODO: add class header
+ * Class to hold Actor nodes which are connected to other nodes by movies
+ * performs Dijkstras algorithm to find shortest path (chain of relationships)
+ * from actor A to actor B in the graph.
  */
 class ActorGraph {
 protected:
-  
-     // Maybe add class data structure(s) here
-     ActorCollection actors;  // collection of Actor* nodes (name, node)
-     unordered_map<int, Actor*> processed; // hold processed Actors to reset for next iter
-     MovieArchive movieArchive;
-     priority_queue<Actor*, vector<Actor*>, Compare> pq;
-     stack<Actor*> path;
+     actor_collection actors;  // collection of Actor* nodes (name, node)
+     hash_table processed;     // to hold processed Actors to reset for next iter
+     movie_archive movieArchive; // collection of all movies amongst actors
+     actor_pq pq; // queue to use in dijkstras
+     stack<Actor*> path; // to record shortest path from actor A to B
 
     /** Update the actor anc movie archive as necessary */
     void updateGraph(Actor* actor, Movie* movie);
@@ -57,18 +61,16 @@ protected:
     /** set origin and destination for actors */
     void getOriginAndDest(string& origin, string& dest, istream& currLine);
 
+    /** find shortest path from actor A to B. Writes a formatted path to a file */
     void getShortestPath(string& origin, string& destination, ostream& pathsFile);
 
+    /** Write a formatted path to a file from shortest path func */
     void writePathToDest(ostream & out);
 
 
 public:
-
-    /**
-     * Constuctor of the Actor graph
-     */
-    ActorGraph(void);
-    ~ActorGraph(); // TODO
+    ActorGraph();
+    ~ActorGraph();
 
     // Maybe add some more methods here
   
@@ -83,6 +85,10 @@ public:
      * return true if file was loaded sucessfully, false otherwise
      */
     bool loadFromFile(const char* in_filename, bool useWeight);
+
+    /** write shortest path for each pair of actors
+     *  in pairs file -- initial call.
+     **/
     void writeShortestPaths(istream& allPairs, ostream& pathsFile);
   
 };
