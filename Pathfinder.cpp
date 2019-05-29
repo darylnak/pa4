@@ -39,12 +39,12 @@ int main(int argc, char* argv[])
         return 0;
     }
 
+    /** /*
     cout << "Reading imdb_2019.tsv ..." << endl;
-    // populate graph with unweighted edges if arg is 'u' (unweighted)
-    if(*argv[2] == 'u') graph.loadFromFile(argv[1], false);
-    // else populate graph with weighted edges
-    else graph.loadFromFile(argv[1], true);
-    cout << "done" << endl;
+    //*/
+
+    // populate graph with unweighted/weighted edges. (u = unweight, w = weight)
+    graph.loadFromFile(argv[1], *argv[2] == 'u');
 
     // loop through pairs file
     allPairs.open(argv[3]); // open file of pairs to find shortest path (arg 3)

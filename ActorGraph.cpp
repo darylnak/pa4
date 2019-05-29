@@ -189,9 +189,10 @@ void ActorGraph::writeShortestPaths(istream& allPairs, ostream& pathsFile)
     {
         getOriginAndDest(originActor, destinationActor, allPairs);
 
+        /** /*
         cout << "Finding shortest path between " << originActor << " and "
              << destinationActor << endl;
-
+        //*/
         getShortestPath(originActor, destinationActor, pathsFile);
     }
 }
@@ -239,8 +240,9 @@ void ActorGraph::getShortestPath(string& orig, string& dest, ostream& pathsFile)
         // check if current actor has been completely processed
         if(!curr->wasProcessed)
         {
-            // mark as processed so it is not visited later on
+            // Mark as processed so it's not visited later. Record modification
             curr->wasProcessed = true;
+            processed.insert(actor(curr->getName(), curr));
 
             // travel through each edge for actor (movie in collection)
             for(movieVal movieItr : curr->movies)
@@ -267,7 +269,8 @@ void ActorGraph::getShortestPath(string& orig, string& dest, ostream& pathsFile)
                         pq.push(actorItr.second);
 
                         // record that this node was modified
-                        processed.insert(rec(recorded++, actorItr.second));
+                        processed.insert(actor(actorItr.second->getName(),
+                                          actorItr.second));
                     }
                 }
             }
@@ -286,7 +289,7 @@ void ActorGraph::getShortestPath(string& orig, string& dest, ostream& pathsFile)
     writePathToDest(pathsFile);
 
     // reset processed nodes for another search
-    for(rec record : processed)
+    for(actor record : processed)
     {
         record.second->wasProcessed = false;
         record.second->setDist(-1);
