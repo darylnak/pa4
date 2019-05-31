@@ -28,7 +28,10 @@ using namespace std;
  */ 
 ActorGraph::ActorGraph()
 {
-    pq = priority_queue<Actor*, vector<Actor*>, Compare>();
+    pq = priority_queue<Actor*, vector<Actor*>, ActCompare>();
+    processed = unordered_map<string, Actor*>();
+    ordEdges = priority_queue<Movie*, vector<Movie*>, MovCompare>();
+    numActors = 0;
 }
 
 /** Destroy the graph */
@@ -50,7 +53,8 @@ ActorGraph::~ActorGraph() {
  *
  * return true if file was loaded successfully, false otherwise
  */
-bool ActorGraph::loadFromFile(const char* in_filename, bool useWeight) {
+bool ActorGraph::loadFromFile(char* in_filename, bool useWeight, bool isTrav)
+{
 
     // Initialize the file stream
     ifstream infile(in_filename);
@@ -108,6 +112,7 @@ bool ActorGraph::loadFromFile(const char* in_filename, bool useWeight) {
         {
             newActor = new Actor(actor_name);
             actors.insert(actorVal(actor_name, newActor)); // add actor to graph
+            ++numActors;
         }
 
         // else, the actor existed, so just remember it
@@ -115,19 +120,22 @@ bool ActorGraph::loadFromFile(const char* in_filename, bool useWeight) {
             newActor = actorItr->second;
 
         /** movies are inserted in an Archive, a collection to
-        *   hold all movie connectin actors.
+        *   hold all movie connecting actors.
         *   Check if this movie has been recorded
         */
         movieKey = movie_title + to_string(movie_year);
         auto movieItr = movieArchive.find(movieKey);
 
         /** create a new movie in the archive if it does not exist
-         *  hold pointer to the movie to work on it later
+         *  hold pointer to the movie to work on it later.
+         *  Also, insert the new movie into a pq sorted, least to greatest,
+         *  strength.
          */
         if(movieItr == movieArchive.end())
         {
             newMovie = new Movie(movie_title, movie_year, useWeight);
             movieArchive.insert(movieVal(movieKey, newMovie));
+            ordEdges.push(newMovie);
         }
 
         // else, the movie existed, so just remember it
@@ -222,6 +230,7 @@ void ActorGraph::getShortestPath(string& orig, string& dest, ostream& pathsFile)
     // initial setup before Dijkstras; pushing origin to queue
     origAct->setDist(0);
     pq.push(origAct);
+    processed.insert(actor(origAct->getName(), origAct));
 
     /** run Dijkstras to find shortest path from origin actor to dest actor */
     while(!pq.empty())
@@ -297,7 +306,8 @@ void ActorGraph::getShortestPath(string& orig, string& dest, ostream& pathsFile)
     }
 
     // reset priority queue for a new call to find shortest path
-    pq = priority_queue<Actor*, vector<Actor*>, Compare>();
+    pq = priority_queue<Actor*, vector<Actor*>, ActCompare>();
+    processed = unordered_map<string, Actor*>();
 }
 
 /** write shortest path from origin to destination to output file */
@@ -323,4 +333,115 @@ void ActorGraph::writePathToDest(ostream & out)
             << "]-->";
     }
 
+}
+
+void ActorGraph::writeMST(ostream& mstOutFile)
+{
+    Movie* currEdge;
+    Actor* act1;
+    Actor* act2;
+    int numEdges = 0;
+    int numActs = 0;
+    int weightTotal = 0;
+
+    // TODO: single node case
+
+    // write header of mst file
+    mstOutFile << "(actor)<--[movie#@year]-->(actor)\n";
+
+    while(numEdges != numActors - 1)
+    {
+        currEdge = ordEdges.top();
+        ordEdges.pop();
+
+        // check each actor for movie
+        auto itr = currEdge->cast.begin();
+        while(true)
+        {
+            act1 = itr++->second;
+
+            // if reached last actor
+            if(itr == currEdge->cast.end())
+                break;
+
+            act2 = itr->second;
+
+            // keep track of number of nodes inserted
+            if(!act1->wasProcessed) ++numActs;
+            if(!act2->wasProcessed) ++numActs;
+
+            // actors are in the same set. Go to next actor in cast
+            if(setFind(act1) == setFind(act2))
+                continue;
+
+            setUnion(act1, act2);
+
+            act1->wasProcessed = act2->wasProcessed = true;
+
+            ++numEdges;
+            weightTotal += currEdge->getStrength();
+
+            // write edge to file
+            mstOutFile << "(" << act1->getName() << ")<--["
+                       << currEdge->getMovieName() << "#@"
+                       << currEdge->getMovieYear() << "-->("
+                       << act2->getName() << ")\n";
+        }
+    }
+
+    mstOutFile << "#NODE CONNECTED: " << numActs << endl
+               << "#EDGE CHOSEN: " << numEdges << endl
+               << "TOTAL EDGE WEIGHTS: " << weightTotal << endl;
+}
+
+Actor* ActorGraph::setFind(Actor* actor)
+{
+    Actor* curr = actor;
+    Actor* child;   // node to attach to sentinel for compression
+    stack<Actor*> children = stack<Actor*>(); // new children of sentinel node
+
+    // get sentinel node of actor and push nodes in path to stack to compress
+    while(curr->getPrev())
+    {
+        children.push(curr);
+        curr = curr->getPrev();
+    }
+
+    // attach these nodes to sentinel to complete compression
+    while(!children.empty())
+    {
+        child = children.top();
+        child->setPrev(curr);
+        children.pop();
+    }
+
+    return curr;
+}
+
+void ActorGraph::setUnion(Actor* act1, Actor* act2)
+{
+    // TODO: union by size
+    Actor* foundAct1 = setFind(act1);
+    Actor* foundAct2 = setFind(act2);
+
+
+    if(foundAct1->numBelow <= foundAct2->numBelow)
+    {
+        foundAct1->setPrev(foundAct2);
+        foundAct2->numBelow += foundAct1->numBelow + 1;
+    }
+    else
+    {
+        foundAct2->setPrev(foundAct1);
+        foundAct1->numBelow += foundAct2->numBelow + 1;
+    }
+}
+
+
+bool MovCompare::operator()(Movie* mov1, Movie* mov2)
+{
+    if(mov1->getStrength() != mov2->getStrength())
+        return mov1->getStrength() > mov2->getStrength();
+    else
+        return false;
 }

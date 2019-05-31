@@ -24,6 +24,7 @@ Actor::Actor(string& name)
     dist = -1;
     prev = nullptr;
     edge = nullptr;
+    numBelow = 0;
 }
 
 /** Update actor's movie collection if they starred in a new movie.

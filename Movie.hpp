@@ -30,7 +30,7 @@ using namespace std;
  *  movie, year released, and strength of relationship between
  *  actors connected by this movie. Strength is how recently the
  *  actors worked together, with the most recent as 2019.
- *  Lower is better becuase the actors most recently
+ *  Lower is better because the actors most recently
  *  worked together
  */
 class Movie{
@@ -60,6 +60,5 @@ public:
     /** add a new actor to the cast from imdb/input file */
     void updateCast(Actor* actor);
 };
-
 
 #endif //PA4_MOVIE_HPP

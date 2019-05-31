@@ -44,7 +44,8 @@ int main(int argc, char* argv[])
     //*/
 
     // populate graph with unweighted/weighted edges. (u = unweight, w = weight)
-    graph.loadFromFile(argv[1], *argv[2] == 'u');
+    // last arg is false because this is not movie traveler
+    graph.loadFromFile(argv[1], *argv[2] == 'w', false);
 
     // loop through pairs file
     allPairs.open(argv[3]); // open file of pairs to find shortest path (arg 3)
@@ -54,8 +55,8 @@ int main(int argc, char* argv[])
     graph.writeShortestPaths(allPairs, pathsFile);
 
     // close all i/o files
-    allPairs.open(argv[3]);
-    pathsFile.open(argv[4]);
+    allPairs.close();
+    pathsFile.close();
     // done
 
     return 0;

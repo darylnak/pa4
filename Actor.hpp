@@ -7,7 +7,7 @@
  * Reference(s): cplusplus.com
  *
  * Description:  Actor object (main node in ActorGraph). Holds the name
- *               of actor, distance from a specified origin acter to this,
+ *               of actor, distance from a specified origin actor to this,
  *               a pointer the adjacent actor in a shortest path from origin,
  *               and the movie connecting them. Contains a collection of movies
  *               this actor starred in.
@@ -29,13 +29,14 @@ typedef pair<string, Movie*> movieVal; // key-value pair of movie
 
 class Actor {
 private:
-    string name; // actor name
     int dist;
+    string name; // actor name
     Actor* prev;
     Movie* edge;
 
 public:
 
+    int numBelow; // number of nodes below this node
     bool wasProcessed;
     Collection movies; // movies this actor starred in
 

@@ -24,7 +24,7 @@
 using namespace std;
 
 /** use with priority queue for dijkstra. key is dist from orig to curr actor */
-class Compare {
+class ActCompare {
 public:
     bool operator() (Actor* act1, Actor* act2)
     {
@@ -35,12 +35,17 @@ public:
     }
 };
 
+class MovCompare {
+public:
+    bool operator() (Movie* mov1, Movie* mov2);
+};
+
 typedef unordered_map<string, Movie*> movie_archive;
 typedef unordered_map<string, Actor*> actor_collection;
 typedef pair<string, Actor*> actor; // <actor_name, Actor*>
-typedef pair<int, Actor*> rec; // pair for record keeping
 typedef unordered_map<string, Actor*> hash_table;
-typedef priority_queue<Actor*, vector<Actor*>, Compare> actor_pq;
+typedef priority_queue<Actor*, vector<Actor*>, ActCompare> actor_pq;
+typedef priority_queue<Movie*, vector<Movie*>, MovCompare> movie_pq;
 
 /**
  * Class to hold Actor nodes which are connected to other nodes by movies
@@ -52,8 +57,10 @@ protected:
      actor_collection actors;  // collection of Actor* nodes (name, node)
      hash_table processed;     // to hold processed Actors to reset for next iter
      movie_archive movieArchive; // collection of all movies amongst actors
-     actor_pq pq; // queue to use in dijkstras
-     stack<Actor*> path; // to record shortest path from actor A to B
+     actor_pq pq;                // queue to use in dijkstras
+     stack<Actor*> path;         // to record shortest path from actor A to B
+     movie_pq ordEdges;          // ordered edges (movies ordered by strength)
+     int numActors;              // total number of nodes in graph
 
     /** Update the actor anc movie archive as necessary */
     void updateGraph(Actor* actor, Movie* movie);
@@ -67,6 +74,9 @@ protected:
     /** Write a formatted path to a file from shortest path func */
     void writePathToDest(ostream & out);
 
+    Actor* setFind(Actor* actor);
+
+    void setUnion(Actor* act1, Actor* act2);
 
 public:
     ActorGraph();
@@ -84,12 +94,14 @@ public:
      *
      * return true if file was loaded sucessfully, false otherwise
      */
-    bool loadFromFile(const char* in_filename, bool useWeight);
+    bool loadFromFile(char* in_filename, bool useWeight, bool isTrav);
 
     /** write shortest path for each pair of actors
      *  in pairs file -- initial call.
      **/
     void writeShortestPaths(istream& allPairs, ostream& pathsFile);
+
+    void writeMST(ostream& mstOutFile);
   
 };
 
