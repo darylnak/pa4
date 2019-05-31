@@ -14,7 +14,7 @@ else
     LDFLAGS += -g
 endif
 
-all: pathfinder
+all: pathfinder movietraveler
 
 
 
@@ -22,6 +22,9 @@ all: pathfinder
 
 pathfinder: ActorGraph.o Actor.o Movie.o Pathfinder.o
 	$(CC) $(CXXFLAGS) -o pathfinder ActorGraph.o Actor.o Movie.o Pathfinder.o
+
+movietraveler: ActorGraph.o Actor.o Movie.o MovieTraveler.o
+	$(CC) $(CXXFLAGS) -o movietraveler ActorGraph.o Actor.o Movie.o MovieTraveler.o
 
 ActorGraph.o: ActorGraph.hpp ActorGraph.cpp Actor.hpp
 	$(CC) $(CXXFLAGS) -c ActorGraph.cpp
@@ -35,6 +38,9 @@ Movie.o: Movie.hpp Movie.cpp Actor.hpp
 Pathfinder.o: Pathfinder.cpp ActorGraph.hpp
 	$(CC) $(CXXFLAGS) -c Pathfinder.cpp
 
+MovieTraveler.o: MovieTraveler.cpp ActorGraph.hpp
+	$(CC) $(CXXFLAGS) -c MovieTraveler.cpp
+
 clean:
-	rm -f pathfinder *.o core*
+	rm -f pathfinder movietraveler *.o core*
 
