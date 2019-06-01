@@ -1,9 +1,26 @@
+/**
+ * Filename:    MovieTraveler.cpp
+ *
+ * Team:         Brandon Olmos (bolmos@ucsd.edu),
+ *               Daryl Nakamoto (dnakamot@ucsd.edu)
+ *
+ * Reference(s): cplusplus.com
+ *
+ * Description:  Main driver to find a minimum-spanning tree of the ActorGraph graph.
+ *               Writes the MST to a file, listing its edges connecting actors,
+ *               as well as the total number of actors, edges, and total weight of the
+ *               edges in the MST. The ActorGraph graph is strictly weighted and undirected.
+ *
+ * Arguments: input file, output file
+ */
+
 #include <iostream>
 #include <fstream>
 #include "ActorGraph.hpp"
 
 using namespace std;
 
+/** Main driver of MovieTraveler implementation. */
 int main(int argc, char** argv)
 {
     ActorGraph graph;
@@ -19,10 +36,6 @@ int main(int argc, char** argv)
 
         return 0;
     }
-
-    /** /*
-    cout << "Reading imdb_2019.tsv ..." << endl;
-    //*/
 
     // populate graph with unweighted/weighted edges. (u = unweight, w = weight)
     graph.loadFromFile(argv[1], true, true);

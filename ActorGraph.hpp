@@ -35,6 +35,7 @@ public:
     }
 };
 
+/** Comparator for priority queue to sort movies from most recent to least recent. */
 class MovCompare {
 public:
     bool operator() (Movie* mov1, Movie* mov2);
@@ -74,8 +75,10 @@ protected:
     /** Write a formatted path to a file from shortest path func */
     void writePathToDest(ostream & out);
 
+    /** Finds sentinel value of actor in the disjoint set (up-tree). Includes path compression logic. */
     Actor* setFind(Actor* actor);
 
+    /** Unions two disjoint sets to form a new disjoint set (up-tree) of actors. */
     void setUnion(Actor* act1, Actor* act2);
 
 public:
@@ -101,6 +104,9 @@ public:
      **/
     void writeShortestPaths(istream& allPairs, ostream& pathsFile);
 
+    /** Write a Minimum Spanning Tree to mstOutFile, including header, shortest weighted paths, num of actors and movies
+     *  and total edge weight.
+     */
     void writeMST(ostream& mstOutFile);
   
 };

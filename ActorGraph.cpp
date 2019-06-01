@@ -335,8 +335,12 @@ void ActorGraph::writePathToDest(ostream & out)
 
 }
 
+/** Write a Minimum Spanning Tree to mstOutFile, including header, shortest weighted paths, num of actors and movies
+ *  and total edge weight.
+ */
 void ActorGraph::writeMST(ostream& mstOutFile)
 {
+    // Initializing variables to hold edges, actors, and total weight/actors/edges.
     Movie* currEdge;
     Actor* act1;
     Actor* act2;
@@ -349,58 +353,66 @@ void ActorGraph::writeMST(ostream& mstOutFile)
     // write header of mst file
     mstOutFile << "(actor)<--[movie#@year]-->(actor)\n";
 
+    // While loop to connect actors until we have a connected path with no cycles.
     while(numEdges != numActors - 1)
     {
+        // Getting the minimum-weight movie.
         currEdge = ordEdges.top();
         ordEdges.pop();
 
-        // check each actor for movie
+        // check each actor for currEdge movie
         auto itr = currEdge->cast.begin();
-        while(true)
+        while(true)                          //the magic happens past this point//
         {
+            //Get the (itr)th actor in the cast
             act1 = itr++->second;
 
-            // if reached last actor
+            // if reached last actor, get out
             if(itr == currEdge->cast.end())
                 break;
 
+            //Get the (itr+1)th actor in the cast
             act2 = itr->second;
 
             // keep track of number of nodes inserted
             if(!act1->wasProcessed) ++numActs;
             if(!act2->wasProcessed) ++numActs;
 
-            // actors are in the same set. Go to next actor in cast
+            // if actors are in the same set, go to next actor in cast. Prevents cycle.
             if(setFind(act1) == setFind(act2))
                 continue;
 
+            // Union the disjoint sets.
             setUnion(act1, act2);
 
+            // We mark both actors as processed. Prevents counting actors twice.
             act1->wasProcessed = act2->wasProcessed = true;
 
+            // At this point, we connected two actors, so increase edge and weight total.
             ++numEdges;
             weightTotal += currEdge->getStrength();
 
-            // write edge to file
+            // write edge to mstOutFile
             mstOutFile << "(" << act1->getName() << ")<--["
                        << currEdge->getMovieName() << "#@"
-                       << currEdge->getMovieYear() << "-->("
+                       << currEdge->getMovieYear() << "]-->("
                        << act2->getName() << ")\n";
         }
     }
-
+    // Write total number of actors, edges, and total weight to mstOutfile.
     mstOutFile << "#NODE CONNECTED: " << numActs << endl
                << "#EDGE CHOSEN: " << numEdges << endl
                << "TOTAL EDGE WEIGHTS: " << weightTotal << endl;
 }
 
+/** Finds sentinel value of actor in the disjoint set (up-tree). Includes path compression logic. */
 Actor* ActorGraph::setFind(Actor* actor)
 {
-    Actor* curr = actor;
+    Actor* curr = actor;  // Hold current actor to later get path to sentinel.
     Actor* child;   // node to attach to sentinel for compression
-    stack<Actor*> children = stack<Actor*>(); // new children of sentinel node
+    stack<Actor*> children = stack<Actor*>(); // saves new children of sentinel node
 
-    // get sentinel node of actor and push nodes in path to stack to compress
+    // get sentinel node of actor and push nodes in path to stack for later compression
     while(curr->getPrev())
     {
         children.push(curr);
@@ -418,18 +430,21 @@ Actor* ActorGraph::setFind(Actor* actor)
     return curr;
 }
 
+/** Unions two disjoint sets to form a new disjoint set (up-tree) of actors. */
 void ActorGraph::setUnion(Actor* act1, Actor* act2)
 {
-    // TODO: union by size
+    // Getting sentinel nodes for union of sets. One node will be child of the other.
     Actor* foundAct1 = setFind(act1);
     Actor* foundAct2 = setFind(act2);
 
-
+    // If the size of act1's set is smaller or equal to act2's set, sentinel of act1 is attached to sentinel of act2.
     if(foundAct1->numBelow <= foundAct2->numBelow)
     {
         foundAct1->setPrev(foundAct2);
         foundAct2->numBelow += foundAct1->numBelow + 1;
     }
+
+    // Otherwise, sentinel of act 2 is now a child of act1's sentinel.
     else
     {
         foundAct2->setPrev(foundAct1);
@@ -437,7 +452,7 @@ void ActorGraph::setUnion(Actor* act1, Actor* act2)
     }
 }
 
-
+/** Comparator for priority queue to sort movies from most recent to least recent. */
 bool MovCompare::operator()(Movie* mov1, Movie* mov2)
 {
     if(mov1->getStrength() != mov2->getStrength())

@@ -40,7 +40,6 @@ private:
     int strength;
 
 public:
-
     Cast cast; // movie cast
 
     /** Create a new movie with weighted or unweighted edge, depending on arg
