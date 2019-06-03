@@ -14,33 +14,21 @@ else
     LDFLAGS += -g
 endif
 
-all: pathfinder movietraveler
-
-
+all: navigationsystem
 
 # include what ever source code *.hpp files pathfinder relies on (these are merely the ones that were used in the solution)
 
-pathfinder: ActorGraph.o Actor.o Movie.o Pathfinder.o
-	$(CC) $(CXXFLAGS) -o pathfinder ActorGraph.o Actor.o Movie.o Pathfinder.o
+navigationsystem: NavigationSystem.o LocationGraph.o Location.o
+	$(CC) $(CXXFLAGS) -o navigationsystem NavigationSystem.o LocationGraph.o Location.o
 
-movietraveler: ActorGraph.o Actor.o Movie.o MovieTraveler.o
-	$(CC) $(CXXFLAGS) -o movietraveler ActorGraph.o Actor.o Movie.o MovieTraveler.o
+NavigationSystem.o: NavigationSystem.cpp
+	$(CC) $(CXXFLAGS) -c NavigationSystem.cpp
 
-ActorGraph.o: ActorGraph.hpp ActorGraph.cpp Actor.hpp
-	$(CC) $(CXXFLAGS) -c ActorGraph.cpp
+LocationGraph.o: LocationGraph.hpp LocationGraph.cpp
+	$(CC) $(CXXFLAGS) -c LocationGraph.cpp
 
-Actor.o: Actor.hpp ActorGraph.cpp
-	$(CC) $(CXXFLAGS) -c Actor.cpp
-
-Movie.o: Movie.hpp Movie.cpp Actor.hpp
-	$(CC) $(CXXFLAGS) -c Movie.cpp
-
-Pathfinder.o: Pathfinder.cpp ActorGraph.hpp
-	$(CC) $(CXXFLAGS) -c Pathfinder.cpp
-
-MovieTraveler.o: MovieTraveler.cpp ActorGraph.hpp
-	$(CC) $(CXXFLAGS) -c MovieTraveler.cpp
+Location.o: Location.hpp Location.cpp
+	$(CC) $(CXXFLAGS) -c Location.cpp
 
 clean:
-	rm -f pathfinder movietraveler *.o core*
-
+	rm -f navigationsystem *.o core*
