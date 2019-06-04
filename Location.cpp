@@ -1,3 +1,16 @@
+/**
+ * Filename:     Location.cpp
+ *
+ * Team:         Brandon Olmos (bolmos@ucsd.edu),
+ *               Daryl Nakamoto (dnakamot@ucsd.edu)
+ *
+ * Reference(s): cplusplus.com
+ *
+ * Description:  Location object with name, x-y coord, adjacent location, and values
+ *               used to perform shortest path algs on.
+ *
+ */
+
 #include "Location.hpp"
 
 Location::Location(string name, int x, int y) {
@@ -9,14 +22,6 @@ Location::Location(string name, int x, int y) {
     isOptimized = false;
     from = nullptr;
     adjacent.reserve(1000);
-}
-
-void Location::setXcoord(int &x) {
-    xCoord = x;
-}
-
-void Location::setycoord(int &y) {
-    yCoord = y;
 }
 
 int Location::getXcoord() {

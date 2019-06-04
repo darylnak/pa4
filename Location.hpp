@@ -1,6 +1,15 @@
-//
-// Created by djnak on 5/31/2019.
-//
+/**
+ * Filename:     Location.hpp
+ *
+ * Team:         Brandon Olmos (bolmos@ucsd.edu),
+ *               Daryl Nakamoto (dnakamot@ucsd.edu)
+ *
+ * Reference(s): cplusplus.com
+ *
+ * Description:  Location object with name, x-y coord, adjacent location, and values
+ *               used to perform shortest path algs on.
+ *
+ */
 
 #ifndef PA4_LOCATION_HPP
 #define PA4_LOCATION_HPP
@@ -30,9 +39,6 @@ public:
      /////////////////
 
     Location(string name, int x, int y);
-
-    void setXcoord(int& x);
-    void setycoord(int& y);
 
     int getXcoord();
     int getYCoord();

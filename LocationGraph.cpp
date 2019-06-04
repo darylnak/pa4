@@ -1,6 +1,16 @@
-//
-// Created by djnak on 5/31/2019.
-//
+/**
+ * Filename:     LocationGraph.cpp
+ *
+ * Team:         Brandon Olmos (bolmos@ucsd.edu),
+ *               Daryl Nakamoto (dnakamot@ucsd.edu)
+ *
+ * Reference(s): cplusplus.com
+ *
+ * Description:  Graph which contains Location nodes to perform graph algs on.
+ *               Can find shortest path from Location A to Location B (A* alg.)
+ *
+ * Arguments: input file, u/w, pairs, output
+ */
 
 #include "LocationGraph.hpp"
 
@@ -15,6 +25,7 @@ LocationGraph::~LocationGraph()
         delete loc.second;
 }
 
+// build location graph from locFile and neighFile  (locations and edges)
 void LocationGraph::buildGraph(istream& locFile, istream& neighFile)
 {
     string locationName;
@@ -23,7 +34,7 @@ void LocationGraph::buildGraph(istream& locFile, istream& neighFile)
     int x;
     int y;
 
-    // create all nodes in graph and put them in a hash table to quicky lookup specific nodes
+    // create all nodes in graph and put them in a hash table to quickly lookup specific nodes
     while(true)
     {
         locFile >> locationName;
@@ -52,17 +63,18 @@ void LocationGraph::buildGraph(istream& locFile, istream& neighFile)
         locations.find(loc2Name)->second->addAdj(locations.find(loc1Name)->second);
     }
 }
-
+// write directions between locations in tripFile to outFile (public call)
 void LocationGraph::writeDirections(istream& tripFile, ostream& outFile)
 {
-    int mult = 1;
+    int mult = 1; // debugging multiplier
 
+    // loop for all pairs in tripFile
     while(true)
     {
         string orig;
         string dest;
 
-        tripFile >> orig;
+        tripFile >> orig;          // get origin and destination names
 
         if(tripFile.eof())
             break;
@@ -70,46 +82,48 @@ void LocationGraph::writeDirections(istream& tripFile, ostream& outFile)
         tripFile >> dest;
 
 
-        Location* origLoc = locations.find(orig)->second;
+        Location* origLoc = locations.find(orig)->second;       // get origin and dest from location hash table
         Location* destLoc = locations.find(dest)->second;
-        Location* curr = nullptr; // current working location in graph
-        int distCheck; // current working distance from source
+        Location* curr = nullptr;                               // current working location in graph
+
+        int distCheck;                            // current working distance from source
         bool hasPath = false;
 
         // initial setup before A*; pushing origin to hash
         origLoc->setDist(0);
         origLoc->setHeurDist(heuristic(origLoc, destLoc, mult));
+
         pq.push(origLoc);
         modified.insert(locPair(origLoc->getLocationName(), origLoc));
 
-        /** run Dijkstras to find shortest path from origin actor to dest actor */
+        /** run A* to find shortest path from origin Location to dest Location */
         while(!pq.empty())
         {
-            // get min distance actor (node) from origin
+            // get min distance node from origin
             curr = pq.top();
             pq.pop();
 
             // stop when dest has shortest path to orig (popped node is done node)
             if(curr == destLoc)
             {
-                hasPath = true; // set to know if path found by loop termination
+                hasPath = true;     // set to know if path found by loop termination
                 break;
             }
 
-            // check if current actor has been completely processed
+            // check if current location has been optimized
             if(!curr->isOptimized)
             {
-                // Mark as processed so it's not visited later. Record modification
+                // Mark as optimized so it's not visited later. Record modification
                 curr->isOptimized = true;
                 modified.insert(locPair(curr->getLocationName(), curr));
 
-                // travel through each edge for actor (movie in collection)
+                // process each adjacent Location of curr
                 for(pair<string, Location*> loc : curr->adjacent)
                 {
-                    // check if current actor has been completely processed
+                    // check if current location been completely processed
                     if(loc.second->isOptimized) continue;
 
-                    // get this paths distance from origin to current actor
+                    // get this paths distance from origin to current location
                     distCheck = curr->getDist() +
                                 getDistBetween(curr, loc.second);
 
@@ -117,7 +131,7 @@ void LocationGraph::writeDirections(istream& tripFile, ostream& outFile)
                     if(loc.second->getDist() < 0 ||
                        distCheck < loc.second->getDist())
                     {
-                        // remember actor that got us here
+                        // remember location that got us here and record heuristic
                         loc.second->setFrom(curr);
                         loc.second->setDist(distCheck);
                         loc.second->setHeurDist(distCheck +
@@ -158,12 +172,15 @@ void LocationGraph::writeDirections(istream& tripFile, ostream& outFile)
     }
 }
 
+// calculate heuristic for curr node (euclid dist from curr to endDest)
 int LocationGraph::heuristic(Location* curr, Location* endDest, int c)
 {
+    // NOTE: c should always be 1. was included for skewing path
     return c*(abs(curr->getXcoord() - endDest->getXcoord()) +
               abs(curr->getYCoord() - endDest->getYCoord()));
 }
 
+// get euclid dist between two locations
 int LocationGraph::getDistBetween(Location* curr, Location* adj)
 {
     int euclidianDist = abs(curr->getXcoord() - adj->getXcoord()) +
@@ -171,6 +188,7 @@ int LocationGraph::getDistBetween(Location* curr, Location* adj)
     return euclidianDist;
 }
 
+// write directions between two locations to outFile
 void LocationGraph::writeDirecsToFile(ostream& outFile)
 {
     while(!directions.empty())
